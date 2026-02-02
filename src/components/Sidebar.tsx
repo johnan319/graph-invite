@@ -8,13 +8,30 @@ export default function Sidebar() {
     setMode("reveal");
   };
 
-  // Extract tags from path nodes
-  const pathMetadata =
-    path.length > 0
-      ? path
-          .map((nodeId) => graph.nodes.find((n) => n.id === nodeId)?.tag)
-          .filter(Boolean)
-      : [];
+  // Create encoded metadata (looks technical but hides the message)
+  const getEncodedMetadata = () => {
+    if (path.length === 0) return [];
+
+    // Generate hash-like checksums for each node that look technical
+    return path.map((nodeId) => {
+      const node = graph.nodes.find((n) => n.id === nodeId);
+      if (!node) return "";
+
+      // Create a pseudo-hash from the tag (looks like hex checksum)
+      const tag = node.tag;
+      let hash = 0;
+      for (let i = 0; i < tag.length; i++) {
+        hash = ((hash << 5) - hash) + tag.charCodeAt(i);
+        hash = hash & hash;
+      }
+
+      // Convert to hex-like format that looks like a checksum
+      const hexHash = Math.abs(hash).toString(16).padStart(6, '0').slice(0, 6);
+      return `0x${hexHash}`;
+    });
+  };
+
+  const pathMetadata = getEncodedMetadata();
 
   return (
     <div className="sidebar">
@@ -59,7 +76,7 @@ export default function Sidebar() {
             </div>
             {pathMetadata.length > 0 && (
               <div className="result-item metadata">
-                <span className="label">Path metadata:</span>
+                <span className="label">Node checksums:</span>
                 <span className="value">{pathMetadata.join(" → ")}</span>
               </div>
             )}
